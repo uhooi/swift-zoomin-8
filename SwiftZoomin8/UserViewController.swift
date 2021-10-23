@@ -44,46 +44,64 @@ final class UserViewController: UIViewController {
         
         // User の JSON の取得
         let url: URL = .init(string: "https://koherent.org/fake-service/api/user?id=\(id)")!
-        downloadData(from: url) { [self] userData in
-            // メインスレッドで実行
-            DispatchQueue.main.async {
-                do {
-                    let data: Data = try userData.get()
-                    
-                    // JSON のデコード
-                    let user: User = try JSONDecoder().decode(User.self, from: data)
-                    
-                    // View への反映
-                    title = user.name
-                    nameLabel.text = user.name
-
-                    // アイコン画像の取得
-                    downloadData(from: user.iconURL) { iconData in
-                        // メインスレッドで実行
-                        DispatchQueue.main.async {
-                            do {
-                                let iconData: Data = try iconData.get()
-                                
-                                // Data を UIImage に変換
-                                guard let iconImage: UIImage = .init(data: iconData) else {
-                                    // エラーハンドリング
-                                    print("The icon image at \(user.iconURL) has an illegal format.")
-                                    return
-                                }
-                                
-                                // View への反映
-                                iconImageView.image = iconImage
-                            } catch {
-                                // エラーハンドリング
-                                print(error)
-                            }
-                        }
-                    }
-                } catch {
-                    // エラーハンドリング
-                    print(error)
+        Task {
+            do {
+                let userData = try await downloadData(from: url)
+                let user = try JSONDecoder().decode(User.self, from: userData)
+                title = user.name
+                nameLabel.text = user.name
+                
+                let iconData = try await downloadData(from: user.iconURL)
+                guard let iconImage: UIImage = .init(data: iconData) else {
+                    print("The icon image at \(user.iconURL) has an illegal format.")
+                    return
                 }
+                iconImageView.image = iconImage
+            } catch {
+                print(error)
             }
         }
+        
+//        downloadData(from: url) { [self] userData in
+//            // メインスレッドで実行
+//            DispatchQueue.main.async {
+//                do {
+//                    let data: Data = try userData.get()
+//
+//                    // JSON のデコード
+//                    let user: User = try JSONDecoder().decode(User.self, from: data)
+//
+//                    // View への反映
+//                    title = user.name
+//                    nameLabel.text = user.name
+//
+//                    // アイコン画像の取得
+//                    downloadData(from: user.iconURL) { iconData in
+//                        // メインスレッドで実行
+//                        DispatchQueue.main.async {
+//                            do {
+//                                let iconData: Data = try iconData.get()
+//
+//                                // Data を UIImage に変換
+//                                guard let iconImage: UIImage = .init(data: iconData) else {
+//                                    // エラーハンドリング
+//                                    print("The icon image at \(user.iconURL) has an illegal format.")
+//                                    return
+//                                }
+//
+//                                // View への反映
+//                                iconImageView.image = iconImage
+//                            } catch {
+//                                // エラーハンドリング
+//                                print(error)
+//                            }
+//                        }
+//                    }
+//                } catch {
+//                    // エラーハンドリング
+//                    print(error)
+//                }
+//            }
+//        }
     }
 }
