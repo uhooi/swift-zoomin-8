@@ -20,24 +20,26 @@ final class UserViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        state
-            .$user
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] user in
-                // View への反映
-                self?.title = user?.name
-                self?.nameLabel.text = user?.name
-            }
-            .store(in: &cancellables)
-        
-        state
-            .$iconImage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] iconImage in
-                // View への反映
-                self?.iconImageView.image = iconImage
-            }
-            .store(in: &cancellables)
+        Task {
+            await state
+                .$user
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] user in
+                    // View への反映
+                    self?.title = user?.name
+                    self?.nameLabel.text = user?.name
+                }
+                .store(in: &cancellables)
+            
+            await state
+                .$iconImage
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] iconImage in
+                    // View への反映
+                    self?.iconImageView.image = iconImage
+                }
+                .store(in: &cancellables)
+        }
         
         // レイアウト
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -73,3 +75,5 @@ final class UserViewController: UIViewController {
         }
     }
 }
+
+extension Published.Publisher: @unchecked Sendable {}
