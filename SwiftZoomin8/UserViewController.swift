@@ -1,7 +1,7 @@
 import UIKit
 import Combine
 
-final class UserViewController: UIViewController {
+@MainActor final class UserViewController: UIViewController {
     private let state: UserViewState
     private var cancellables: Set<AnyCancellable> = []
     
@@ -23,7 +23,7 @@ final class UserViewController: UIViewController {
         do {
             let task = Task { [weak self] in
                 guard let state = self?.state else { return }
-                for await user in await state.$user.values {
+                for await user in state.$user.values {
                     guard let self = self else { return }
                     // View への反映
                     self.title = user?.name
@@ -36,7 +36,7 @@ final class UserViewController: UIViewController {
         do {
             let task = Task { [weak self] in
                 guard let state = self?.state else { return }
-                for await iconImage in await state.$iconImage.values {
+                for await iconImage in state.$iconImage.values {
                     guard let self = self else { return }
                     // View への反映
                     self.iconImageView.image = iconImage
