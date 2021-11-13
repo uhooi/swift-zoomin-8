@@ -33,3 +33,6 @@ actor UserViewState {
         self.iconImage = iconImage
     }
 }
+
+extension UIImage: @unchecked Sendable {}
+extension URL: @unchecked Sendable {}
