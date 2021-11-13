@@ -23,23 +23,12 @@ import Combine
         do {
             let task = Task { [weak self] in
                 guard let state = self?.state else { return }
-                for await user in state.$user.values {
+                for await _ in state.objectWillChange.values {
                     guard let self = self else { return }
                     // View への反映
-                    self.title = user?.name
-                    self.nameLabel.text = user?.name
-                }
-            }
-            cancellables.insert(.init { task.cancel() })
-        }
-        
-        do {
-            let task = Task { [weak self] in
-                guard let state = self?.state else { return }
-                for await iconImage in state.$iconImage.values {
-                    guard let self = self else { return }
-                    // View への反映
-                    self.iconImageView.image = iconImage
+                    self.title = state.user?.name
+                    self.nameLabel.text = state.user?.name
+                    self.iconImageView.image = state.iconImage
                 }
             }
             cancellables.insert(.init { task.cancel() })
@@ -79,5 +68,3 @@ import Combine
         }
     }
 }
-
-extension Published.Publisher: @unchecked Sendable where Output: Sendable {}
