@@ -1,13 +1,15 @@
 import UIKit
+import Combine
 
 final class UserViewController: UIViewController {
-    let id: User.ID
+    private let state: UserViewState
+    private var cancellables: Set<AnyCancellable> = []
     
     private let iconImageView: UIImageView = .init()
     private let nameLabel: UILabel = .init()
     
     init(id: User.ID) {
-        self.id = id
+        self.state = UserViewState(id: id)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -17,6 +19,25 @@ final class UserViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        state
+            .$user
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] user in
+                // View への反映
+                self?.title = user?.name
+                self?.nameLabel.text = user?.name
+            }
+            .store(in: &cancellables)
+        
+        state
+            .$iconImage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] iconImage in
+                // View への反映
+                self?.iconImageView.image = iconImage
+            }
+            .store(in: &cancellables)
         
         // レイアウト
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -44,28 +65,7 @@ final class UserViewController: UIViewController {
         
         Task {
             do {
-                // User の JSON の取得
-                let url: URL = .init(string: "https://koherent.org/fake-service/api/user?id=\(id)")!
-                let data = try await downloadData(from: url)
-                
-                // JSON のデコード
-                let user: User = try JSONDecoder().decode(User.self, from: data)
-                
-                // View への反映
-                title = user.name
-                nameLabel.text = user.name
-                
-                // アイコン画像の取得
-                let iconData = try await downloadData(from: user.iconURL)
-                // Data を UIImage に変換
-                guard let iconImage: UIImage = .init(data: iconData) else {
-                    // エラーハンドリング
-                    print("The icon image at \(user.iconURL) has an illegal format.")
-                    return
-                }
-                
-                // View への反映
-                iconImageView.image = iconImage
+                try await state.loadUser()
             } catch {
                 // エラーハンドリング
                 print(error)
